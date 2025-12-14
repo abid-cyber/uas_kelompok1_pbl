@@ -1,59 +1,318 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Order Service - Inter-Service Communication
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Microservice untuk manajemen order yang melakukan inter-service communication dengan User Service dan Product Service.
 
-## About Laravel
+## 📋 Fitur
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- ✅ **Create Order** - Membuat order baru dengan validasi dari User Service dan Product Service
+- ✅ **List Orders** - Mengambil daftar semua orders
+- ✅ **Get Order** - Mengambil detail order berdasarkan ID
+- ✅ **Inter-Service Communication** - Call ke User Service dan Product Service
+- ✅ **Correlation ID** - Middleware untuk tracking request across services
+- ✅ **Authorization Token Forwarding** - Meneruskan token ke service lain
+- ✅ **Error Handling** - Error handling konsisten untuk kegagalan service lain
+- ✅ **Unit Tests** - Feature tests dengan mock HTTP calls
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 Setup
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Install Dependencies
 
-## Learning Laravel
+```bash
+composer install
+composer require guzzlehttp/guzzle
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 2. Setup Environment
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Buat file `.env` dari template (atau copy dari `.env.example` jika ada):
 
-## Laravel Sponsors
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Edit `.env` file dan konfigurasi:
 
-### Premium Partners
+```env
+APP_NAME="Order Service"
+APP_URL=http://localhost:8002
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=order_service
+DB_USERNAME=root
+DB_PASSWORD=
 
-## Contributing
+# Service URLs for inter-service communication
+USER_SERVICE_URL=http://localhost:8000
+PRODUCT_SERVICE_URL=http://localhost:8001
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Docker service URLs (uncomment if using Docker)
+# USER_SERVICE_URL=http://user-service-nginx:80
+# PRODUCT_SERVICE_URL=http://product-service-nginx:80
+```
 
-## Code of Conduct
+### 3. Setup Database
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan migrate
+```
 
-## Security Vulnerabilities
+### 4. Run Server
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan serve --port=8002
+```
 
-## License
+## 🐳 Docker Setup
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Prerequisites
+- Docker Desktop harus **berjalan**
+
+### Using Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+Service akan berjalan di:
+- **API**: http://localhost:8002
+- **Database**: localhost:3307
+
+### Stop Docker
+
+```bash
+docker-compose down
+```
+
+## 📡 API Endpoints
+
+### Create Order
+
+```http
+POST /api/orders
+Authorization: Bearer {token}
+X-Correlation-ID: {correlation_id}
+Content-Type: application/json
+
+{
+    "user_id": 1,
+    "items": [
+        {
+            "product_id": 1,
+            "quantity": 2,
+            "price": 50000
+        }
+    ],
+    "total": 100000
+}
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Order created successfully",
+    "data": {
+        "id": 1,
+        "user_id": 1,
+        "items": [
+            {
+                "product_id": 1,
+                "quantity": 2,
+                "price": 50000
+            }
+        ],
+        "total": "100000.00",
+        "status": "completed",
+        "created_at": "2024-01-01T00:00:00.000000Z",
+        "updated_at": "2024-01-01T00:00:00.000000Z"
+    },
+    "correlation_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Get All Orders
+
+```http
+GET /api/orders
+Authorization: Bearer {token}
+X-Correlation-ID: {correlation_id}
+```
+
+### Get Order by ID
+
+```http
+GET /api/orders/{id}
+Authorization: Bearer {token}
+X-Correlation-ID: {correlation_id}
+```
+
+## 🔄 Inter-Service Communication Flow
+
+### Create Order Flow:
+
+1. **Validate Token** - Call `GET /api/user/profile` ke User Service
+2. **Validate User** - Call `GET /api/users/{user_id}` ke User Service
+3. **Validate Products** - Call `GET /api/products/{product_id}` ke Product Service untuk setiap item
+4. **Check Stock** - Validasi stock tersedia untuk setiap product
+5. **Create Order** - Simpan order ke database
+6. **Update Stock** - Call `PUT /api/products/{product_id}/stock` ke Product Service untuk mengurangi stock
+
+## 🔗 Correlation ID
+
+Correlation ID digunakan untuk tracking request across multiple services. Middleware otomatis:
+- Generate Correlation ID jika tidak disediakan di header
+- Meneruskan Correlation ID ke service lain
+- Menambahkan Correlation ID ke response
+- Menambahkan Correlation ID ke log context
+
+**Usage:**
+```http
+X-Correlation-ID: 550e8400-e29b-41d4-a716-446655440000
+```
+
+## 🛡️ Error Handling
+
+### Service Unavailable
+
+Jika User Service atau Product Service tidak tersedia:
+
+```json
+{
+    "success": false,
+    "message": "Service temporarily unavailable",
+    "service": "User Service",
+    "correlation_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Status Code: `503 Service Unavailable`
+
+### Validation Errors
+
+```json
+{
+    "success": false,
+    "message": "Validation failed",
+    "errors": {
+        "user_id": ["The user id field is required."],
+        "items": ["The items field is required."]
+    },
+    "correlation_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Status Code: `422 Unprocessable Entity`
+
+### Insufficient Stock
+
+```json
+{
+    "success": false,
+    "message": "Insufficient stock for product ID: 1",
+    "correlation_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Status Code: `400 Bad Request`
+
+## 🧪 Testing
+
+### Unit Tests
+
+Run all tests:
+```bash
+php artisan test
+```
+
+Run specific test:
+```bash
+php artisan test --filter OrderServiceTest
+```
+
+### Manual Testing dengan Thunder Client
+
+Untuk testing manual menggunakan Thunder Client (VS Code Extension), lihat panduan lengkap di:
+📖 **[THUNDER_CLIENT_GUIDE.md](./THUNDER_CLIENT_GUIDE.md)**
+
+**Quick Start:**
+1. Install Thunder Client extension di VS Code
+2. Pastikan semua service berjalan (User, Product, Order)
+3. Get token dari User Service (register/login)
+4. Test endpoint Order Service dengan token dan Correlation ID
+
+### Test Coverage
+
+- ✅ Create order dengan inter-service calls
+- ✅ Order creation fails ketika user service unavailable
+- ✅ Order creation fails ketika product service unavailable
+- ✅ Order creation fails ketika stock insufficient
+- ✅ Validation errors
+- ✅ Correlation ID generated jika tidak disediakan
+
+## 📁 Struktur Project
+
+```
+order-service/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   └── OrderController.php
+│   │   ├── Middleware/
+│   │   │   └── CorrelationIdMiddleware.php
+│   │   └── Services/
+│   │       ├── UserServiceClient.php
+│   │       └── ProductServiceClient.php
+│   ├── Models/
+│   │   └── Order.php
+│   └── Exceptions/
+│       ├── ServiceUnavailableException.php
+│       └── ApiExceptionHandler.php
+├── routes/
+│   └── api.php
+├── database/migrations/
+│   └── 2024_01_01_000003_create_orders_table.php
+├── tests/Feature/
+│   └── OrderServiceTest.php
+├── docker-compose.yml
+├── Dockerfile
+└── docker/
+    ├── nginx/
+    │   └── default.conf
+    └── php/
+        └── local.ini
+```
+
+## 📦 Dependencies
+
+- **Laravel 12**
+- **guzzlehttp/guzzle** - HTTP client untuk inter-service communication
+- **PHP 8.2+**
+
+## 🔧 Configuration
+
+### Service URLs
+
+Konfigurasi URL service lain di `config/services.php` atau `.env`:
+
+```env
+USER_SERVICE_URL=http://localhost:8000
+PRODUCT_SERVICE_URL=http://localhost:8001
+```
+
+### Timeout Settings
+
+Default timeout untuk HTTP client:
+- Connection timeout: 5 seconds
+- Request timeout: 10 seconds
+
+Dapat diubah di `UserServiceClient.php` dan `ProductServiceClient.php`.
+
+## 📝 Notes
+
+- Order Service memerlukan User Service dan Product Service untuk berfungsi
+- Pastikan semua service berjalan sebelum testing
+- Correlation ID otomatis di-generate jika tidak disediakan
+- Authorization token harus valid dari User Service
