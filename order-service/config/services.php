@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'user_service' => [
+        'url' => env('USER_SERVICE_URL', 'http://localhost:8000'),
+    ],
+
+    'product_service' => [
+        'url' => env('PRODUCT_SERVICE_URL', 'http://localhost:8001'),
+    ],
+
 ];
