@@ -2,96 +2,120 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProductRequest;
+use App\Models\Product;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
     /**
-     * Mock products data for testing
+     * Display a listing of the resource.
      */
-    private $products = [
-        1 => ['id' => 1, 'name' => 'Product 1', 'price' => 50000, 'stock' => 100],
-        2 => ['id' => 2, 'name' => 'Product 2', 'price' => 75000, 'stock' => 50],
-        3 => ['id' => 3, 'name' => 'Product 3', 'price' => 100000, 'stock' => 25],
-    ];
-
-    /**
-     * Get product by ID
-     *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function show(Request $request, $id)
+    public function index(Request $request): JsonResponse
     {
-        $correlationId = $request->header('X-Correlation-ID');
+        $query = Product::query();
 
-        if (!isset($this->products[$id])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product not found',
-                'correlation_id' => $correlationId,
-            ], 404);
+        // Search functionality
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%");
         }
+
+        // Pagination
+        $perPage = $request->get('per_page', 10);
+        $products = $query->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'message' => 'Product retrieved successfully',
-            'data' => $this->products[$id],
-            'correlation_id' => $correlationId,
-        ], 200);
+            'data' => $products->items(),
+            'meta' => [
+                'current_page' => $products->currentPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+                'last_page' => $products->lastPage(),
+            ],
+        ]);
     }
 
     /**
-     * Update product stock
-     *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * Store a newly created resource in storage.
      */
-    public function updateStock(Request $request, $id)
+    public function store(ProductRequest $request): JsonResponse
     {
-        $correlationId = $request->header('X-Correlation-ID');
+        $product = Product::create($request->validated());
 
-        $validator = Validator::make($request->all(), [
-            'quantity' => 'required|integer',
-        ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Produk berhasil dibuat',
+            'data' => $product,
+        ], 201);
+    }
 
-        if ($validator->fails()) {
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id): JsonResponse
+    {
+        $product = Product::find($id);
+
+        if (!$product) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-                'correlation_id' => $correlationId,
-            ], 422);
-        }
-
-        if (!isset($this->products[$id])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product not found',
-                'correlation_id' => $correlationId,
+                'message' => 'Produk tidak ditemukan',
             ], 404);
-        }
-
-        // Update stock (quantity can be negative to reduce stock)
-        $this->products[$id]['stock'] += $request->quantity;
-
-        if ($this->products[$id]['stock'] < 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient stock',
-                'correlation_id' => $correlationId,
-            ], 400);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Stock updated successfully',
-            'data' => $this->products[$id],
-            'correlation_id' => $correlationId,
-        ], 200);
+            'data' => $product,
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(ProductRequest $request, string $id): JsonResponse
+    {
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan',
+            ], 404);
+        }
+
+        $product->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Produk berhasil diperbarui',
+            'data' => $product->fresh(),
+        ]);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id): JsonResponse
+    {
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan',
+            ], 404);
+        }
+
+        $product->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Produk berhasil dihapus',
+        ]);
     }
 }
 
