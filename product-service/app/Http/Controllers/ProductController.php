@@ -120,11 +120,12 @@ class ProductController extends Controller
 
     /**
      * Update product stock.
+     * Accepts quantity as change (can be positive or negative).
      */
     public function updateStock(Request $request, string $id): JsonResponse
     {
         $request->validate([
-            'stock' => 'required|integer|min:0',
+            'quantity' => 'required|integer',
         ]);
 
         $product = Product::find($id);
@@ -136,7 +137,16 @@ class ProductController extends Controller
             ], 404);
         }
 
-        $product->update(['stock' => $request->stock]);
+        $newStock = $product->stock + $request->quantity;
+        
+        if ($newStock < 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stok tidak mencukupi',
+            ], 400);
+        }
+
+        $product->update(['stock' => $newStock]);
 
         return response()->json([
             'success' => true,
