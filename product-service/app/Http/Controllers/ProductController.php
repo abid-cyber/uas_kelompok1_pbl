@@ -117,5 +117,42 @@ class ProductController extends Controller
             'message' => 'Produk berhasil dihapus',
         ]);
     }
+
+    /**
+     * Update product stock.
+     * Accepts quantity as change (can be positive or negative).
+     */
+    public function updateStock(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'quantity' => 'required|integer',
+        ]);
+
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan',
+            ], 404);
+        }
+
+        $newStock = $product->stock + $request->quantity;
+        
+        if ($newStock < 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stok tidak mencukupi',
+            ], 400);
+        }
+
+        $product->update(['stock' => $newStock]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stok produk berhasil diperbarui',
+            'data' => $product->fresh(),
+        ]);
+    }
 }
 
