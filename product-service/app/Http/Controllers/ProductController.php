@@ -117,5 +117,32 @@ class ProductController extends Controller
             'message' => 'Produk berhasil dihapus',
         ]);
     }
+
+    /**
+     * Update product stock.
+     */
+    public function updateStock(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'stock' => 'required|integer|min:0',
+        ]);
+
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produk tidak ditemukan',
+            ], 404);
+        }
+
+        $product->update(['stock' => $request->stock]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stok produk berhasil diperbarui',
+            'data' => $product->fresh(),
+        ]);
+    }
 }
 
