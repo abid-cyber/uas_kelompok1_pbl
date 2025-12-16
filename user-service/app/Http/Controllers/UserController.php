@@ -6,6 +6,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -25,6 +26,10 @@ class UserController extends Controller
 
         $users = User::select('id', 'name', 'email', 'phone', 'address', 'role', 'created_at')
             ->get();
+
+        Log::info('Users list retrieved', [
+            'count' => $users->count(),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -50,11 +55,18 @@ class UserController extends Controller
         $user = User::find($id);
 
         if (!$user) {
+            Log::warning('User not found', [
+                'user_id' => $id,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'User not found',
             ], 404);
         }
+
+        Log::info('User retrieved', [
+            'user_id' => $user->id,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -110,6 +122,10 @@ class UserController extends Controller
 
         $user->update($updateData);
 
+        Log::info('User updated successfully', [
+            'user_id' => $user->id,
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'User updated successfully',
@@ -156,6 +172,10 @@ class UserController extends Controller
         }
 
         $user->delete();
+
+        Log::info('User deleted successfully', [
+            'user_id' => $id,
+        ]);
 
         return response()->json([
             'success' => true,
