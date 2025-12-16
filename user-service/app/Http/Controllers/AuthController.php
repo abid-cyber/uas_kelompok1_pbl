@@ -7,6 +7,7 @@ use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
@@ -26,6 +27,11 @@ class AuthController extends Controller
         ]);
 
         $token = JWTAuth::fromUser($user);
+
+        Log::info('User registered successfully', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -50,12 +56,19 @@ class AuthController extends Controller
 
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
+                Log::warning('Login failed: Invalid credentials', [
+                    'email' => $credentials['email'],
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid email or password',
                 ], 401);
             }
         } catch (\Exception $e) {
+            Log::error('Login failed: Could not create token', [
+                'error' => $e->getMessage(),
+                'email' => $credentials['email'],
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Could not create token',
@@ -63,6 +76,11 @@ class AuthController extends Controller
         }
 
         $user = auth()->user();
+
+        Log::info('User logged in successfully', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -87,6 +105,10 @@ class AuthController extends Controller
     public function profile(): JsonResponse
     {
         $user = auth()->user();
+
+        Log::info('User profile retrieved', [
+            'user_id' => $user->id,
+        ]);
 
         return response()->json([
             'success' => true,

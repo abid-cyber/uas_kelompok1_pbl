@@ -6,6 +6,7 @@ use App\Http\Requests\ProductRequest;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -27,6 +28,11 @@ class ProductController extends Controller
         $perPage = $request->get('per_page', 10);
         $products = $query->paginate($perPage);
 
+        Log::info('Products list retrieved', [
+            'count' => $products->count(),
+            'total' => $products->total(),
+        ]);
+
         return response()->json([
             'success' => true,
             'data' => $products->items(),
@@ -46,6 +52,11 @@ class ProductController extends Controller
     {
         $product = Product::create($request->validated());
 
+        Log::info('Product created successfully', [
+            'product_id' => $product->id,
+            'name' => $product->name,
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Produk berhasil dibuat',
@@ -61,11 +72,18 @@ class ProductController extends Controller
         $product = Product::find($id);
 
         if (!$product) {
+            Log::warning('Product not found', [
+                'product_id' => $id,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Produk tidak ditemukan',
             ], 404);
         }
+
+        Log::info('Product retrieved', [
+            'product_id' => $product->id,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -89,6 +107,10 @@ class ProductController extends Controller
 
         $product->update($request->validated());
 
+        Log::info('Product updated successfully', [
+            'product_id' => $product->id,
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Produk berhasil diperbarui',
@@ -111,6 +133,10 @@ class ProductController extends Controller
         }
 
         $product->delete();
+
+        Log::info('Product deleted successfully', [
+            'product_id' => $id,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -147,6 +173,13 @@ class ProductController extends Controller
         }
 
         $product->update(['stock' => $newStock]);
+
+        Log::info('Product stock updated', [
+            'product_id' => $product->id,
+            'old_stock' => $product->stock - $request->quantity,
+            'new_stock' => $newStock,
+            'quantity_change' => $request->quantity,
+        ]);
 
         return response()->json([
             'success' => true,

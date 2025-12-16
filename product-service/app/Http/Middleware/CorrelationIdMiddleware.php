@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class CorrelationIdMiddleware
 {
@@ -19,6 +20,9 @@ class CorrelationIdMiddleware
         $correlationId = $request->header('X-Correlation-ID') ?? Str::uuid()->toString();
         
         $request->headers->set('X-Correlation-ID', $correlationId);
+        
+        // Set ke log context (untuk logging terdistribusi)
+        Log::withContext(['correlation_id' => $correlationId]);
         
         $response = $next($request);
         
